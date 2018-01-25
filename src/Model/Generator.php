@@ -49,7 +49,7 @@ Parameter                       | Type            | Length  | Comment
 
 INFO;
         $columns = $this->schema->listTableColumns($table);
-        foreach ($columns as $column){
+        foreach ($columns as $column) {
             $this->markdownContent .=
                 $this->buildMarkdownStr('parameter', $column->getName()) .
                 $this->buildMarkdownStr('type', $column->getType()) .
@@ -59,7 +59,7 @@ INFO;
         collect($columns)->each(function ($column) {
 
         });
-        file_put_contents($this->modelPath .'/'. $model . '.md', $this->markdownContent);
+        file_put_contents($this->modelPath . '/' . $model . '.md', $this->markdownContent);
     }
 
     private function setModelPath($path)
