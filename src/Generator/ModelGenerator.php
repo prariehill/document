@@ -1,11 +1,11 @@
 <?php
 
-namespace Temporaries\Document\Model;
+namespace Temporaries\Document\Generator;
 
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\DriverManager;
 
-class Generator
+class ModelGenerator
 {
     private $connection;
 
