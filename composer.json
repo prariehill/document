@@ -1,0 +1,40 @@
+{
+  "name": "temporaries/document",
+  "description": "The GitBook document generator.",
+  "keywords": [
+    "temporaries",
+    "document"
+  ],
+  "license": "MIT",
+  "support": {
+    "issues": "https://github.com/temporaries/document/issues",
+    "source": "https://github.com/temporaries/document"
+  },
+  "authors": [
+    {
+      "name": "temporaries",
+      "email": "temporarycrash@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.0.0",
+    "laravel/framework": "5.5.*",
+    "doctrine/dbal": "^2.6"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Temporaries\\Document\\Tests\\": "tests/",
+      "Temporaries\\Document\\": "src/"
+    }
+  },
+//  "extra": {
+//    "laravel": {
+//      "providers": [
+//        "Temporaries\\Area\\AreaServiceProvider"
+//      ]
+//    }
+//  },
+  "config": {
+    "sort-packages": true
+  }
+}
