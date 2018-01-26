@@ -34,7 +34,6 @@ class ModelGenerator
         collect($this->modelParser->mappedStack)->each(function ($table, $model) {
             $this->generateModel($table, $model);
         });
-
     }
 
     public function generateModel($table, $model)

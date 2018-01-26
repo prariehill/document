@@ -3,6 +3,7 @@
 namespace Temporaries\Document\Parser;
 
 use Illuminate\Filesystem\Filesystem;
+use Temporaries\Document\Exceptions\InvalidPathException;
 
 class ModelParser
 {
@@ -23,10 +24,15 @@ class ModelParser
         $this->filesystem = $filesystem;
         $this->setNamespace($namespace);
         $this->setPath($path);
-        $this->buildStack();
+        $this->init();
     }
 
-    protected function buildStack()
+    public function getMappedStack()
+    {
+        return collect($this->mappedStack);
+    }
+
+    protected function init()
     {
         $this->buildModelStack();
         $this->buildMappedStack();
@@ -66,7 +72,7 @@ class ModelParser
 
     protected function setNamespace($namespace)
     {
-        $this->namespace = $namespace ?? 'App\\';
+        $this->namespace = $namespace ?? 'App\\Model\\';
     }
 
     protected function setPath($path = null)
@@ -84,7 +90,7 @@ class ModelParser
         }
 
         if (!is_dir($this->path)) {
-            throw new \Exception('Invalid directory');
+            throw new InvalidPathException();
         }
 
     }
@@ -95,10 +101,5 @@ class ModelParser
         $relativePath = lcfirst($slashConversion);
         $processedPath = base_path($relativePath);
         return $processedPath;
-    }
-
-    public function __get($name)
-    {
-        return $this->$name;
     }
 }

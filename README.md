@@ -4,6 +4,10 @@
 
 ## Installing
 
+### 安装依赖
 `composer require temporaries/document`
+
+### 发布配置
+`php artisan vendor:publish --provider="Temporaries\Document\DocumentServiceProvider" --tag="config"`
 
 

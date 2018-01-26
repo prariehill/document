@@ -12,10 +12,18 @@ class Manager
 
     protected $modelGenerator;
 
+    protected $modelMappedStack;
+
     public function __construct(ModelParser $modelParser,
                                 ModelGenerator $modelGenerator)
     {
         $this->modelParser = $modelParser;
         $this->modelGenerator = $modelGenerator;
+        $this->modelMappedStack = $modelParser->getMappedStack();
+    }
+
+    public function getMappedStack()
+    {
+        return $this->modelMappedStack;
     }
 }
