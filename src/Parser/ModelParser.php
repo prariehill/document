@@ -2,8 +2,8 @@
 
 namespace Temporaries\Document\Parser;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\Filesystem;
-use Temporaries\Document\Exceptions\InvalidPathException;
 
 class ModelParser
 {
@@ -13,18 +13,18 @@ class ModelParser
 
     protected $tableStack = [];
 
-    protected $namespace;
+    private $namespace;
 
-    protected $path;
+    private $filesystem;
 
-    protected $filesystem;
+    private $path;
 
-    public function __construct(Filesystem $filesystem, $namespace = null, $path = null)
+    public function __construct()
     {
-        $this->filesystem = $filesystem;
-        $this->setNamespace($namespace);
-        $this->setPath($path);
-        $this->init();
+        $this->path = base_path(config('temporariesDoc.input.path'));
+        $this->namespace = config('temporariesDoc.input.namespace');
+        $this->filesystem = app(Filesystem::class);
+        $this->buildMap();
     }
 
     public function getMappedStack()
@@ -32,13 +32,7 @@ class ModelParser
         return collect($this->mappedStack);
     }
 
-    protected function init()
-    {
-        $this->buildModelStack();
-        $this->buildMappedStack();
-    }
-
-    protected function buildModelStack()
+    protected function buildMap()
     {
         $files = $this->filesystem->files($this->path);
 
@@ -47,10 +41,7 @@ class ModelParser
                 $this->modelStack[] = $matchs[1];
             }
         };
-    }
 
-    protected function buildMappedStack()
-    {
         foreach ($this->modelStack as $model) {
             $table = $this->getTable($model);
             if (!is_null($table)) {
@@ -63,43 +54,7 @@ class ModelParser
     protected function getTable($model)
     {
         $class = $this->namespace . $model;
-        try {
-            return app($class)->getTable();
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
-
-    protected function setNamespace($namespace)
-    {
-        $this->namespace = $namespace ?? 'App\\Model\\';
-    }
-
-    protected function setPath($path = null)
-    {
-        if (is_null($path)) {
-            return $this->path = $this->convertNamespaceIntoPath();
-        }
-
-        if (is_dir($path)) {
-            return $this->path = $path;
-        }
-
-        if (is_dir($processedPath = base_path($path))) {
-            return $this->path = $processedPath;
-        }
-
-        if (!is_dir($this->path)) {
-            throw new InvalidPathException();
-        }
-
-    }
-
-    private function convertNamespaceIntoPath()
-    {
-        $slashConversion = str_replace('\\', DIRECTORY_SEPARATOR, $this->namespace);
-        $relativePath = lcfirst($slashConversion);
-        $processedPath = base_path($relativePath);
-        return $processedPath;
+        $reflection = new \ReflectionClass($class);
+        return $reflection->isSubclassOf(Model::class) ? app($class)->getTable() : null;
     }
 }

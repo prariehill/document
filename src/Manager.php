@@ -2,7 +2,6 @@
 
 namespace Temporaries\Document;
 
-
 use Temporaries\Document\Generator\ModelGenerator;
 use Temporaries\Document\Parser\ModelParser;
 

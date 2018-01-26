@@ -4,6 +4,7 @@ namespace Temporaries\Document\Generator;
 
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\DriverManager;
+use Temporaries\Document\Parser\ModelParser;
 
 class ModelGenerator
 {
@@ -20,7 +21,7 @@ class ModelGenerator
     public function __construct()
     {
         $this->setConnectionConfig();
-        $this->setModelPath('doc/Model/Test');
+        $this->setModelPath();
     }
 
     public function getMarkdownContent()
@@ -28,10 +29,10 @@ class ModelGenerator
         return $this->markdownContent;
     }
 
-    public function buildModel($namespace)
+    public function buildModel()
     {
-        $this->modelParser = app(\App\Services\Parser::class, ['namespace' => $namespace]);
-        collect($this->modelParser->mappedStack)->each(function ($table, $model) {
+        $this->modelParser = app(ModelParser::class);
+        collect($this->modelParser->getMappedStack())->each(function ($table, $model) {
             $this->generateModel($table, $model);
         });
     }
@@ -55,15 +56,13 @@ INFO;
                 $this->buildMarkdownStr('length', $column->getLength()) .
                 $this->buildMarkdownStr('comment', $column->getComment());
         }
-        collect($columns)->each(function ($column) {
 
-        });
         file_put_contents($this->modelPath . '/' . $model . '.md', $this->markdownContent);
     }
 
-    private function setModelPath($path)
+    private function setModelPath()
     {
-        $this->modelPath = base_path($path);
+        $this->modelPath = config('temporariesDoc.output.model');
         if (!is_dir($this->modelPath)) {
             mkdir($this->modelPath, 0755);
         }
@@ -72,13 +71,7 @@ INFO;
     private function setConnectionConfig()
     {
         $configuration = new Configuration();
-        $connectionParams = [
-            'dbname' => 'client',
-            'user' => 'root',
-            'password' => 'root',
-            'host' => '172.20.0.1',
-            'driver' => 'pdo_mysql',
-        ];
+        $connectionParams = config('temporariesDoc.connections');
         $this->connection = DriverManager::getConnection($connectionParams, $configuration);
         $this->schema = $this->connection->getSchemaManager();
     }
