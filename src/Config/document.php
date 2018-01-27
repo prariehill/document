@@ -2,17 +2,6 @@
 return [
     /**
      * --------------------------------
-     * 映射表 =￣ω￣=
-     * --------------------------------
-     */
-    'map' => [
-        'model' => [
-//        'DummyModelName' => 'DummyChineseName'
-        ],
-    ],
-
-    /**
-     * --------------------------------
      *
      * 输入 =￣ω￣=
      *
@@ -20,7 +9,7 @@ return [
      */
     'input' => [
         'namespace' => "App\\Model\\",
-        'path' => "app/Model",
+        'path' => base_path('app/Model'),
     ],
 
     /**
@@ -41,9 +30,9 @@ return [
      */
     'connections' => [
         'driver' => 'pdo_mysql',
-        'dbname' => env('DB_DATABASE',config('database.connections.mysql.database')),
-        'user' => env('DB_USERNAME',config('database.connections.mysql.username')),
-        'password' => env('DB_PASSWORD',config('database.connections.mysql.password')),
-        'host' => env('DB_HOST',config('database.connections.mysql.host')),
+        'dbname' => env('DB_DATABASE', config('database.connections.mysql.database')),
+        'user' => env('DB_USERNAME', config('database.connections.mysql.username')),
+        'password' => env('DB_PASSWORD', config('database.connections.mysql.password')),
+        'host' => env('DB_HOST', config('database.connections.mysql.host')),
     ],
 ];

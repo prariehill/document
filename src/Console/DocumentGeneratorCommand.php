@@ -4,6 +4,7 @@ namespace Temporaries\Document\Console;
 
 use Illuminate\Console\GeneratorCommand;
 use Temporaries\Document\Manager;
+use Temporaries\Document\Parser\ModelParser;
 
 class DocumentGeneratorCommand extends GeneratorCommand
 {
@@ -12,8 +13,8 @@ class DocumentGeneratorCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $signature = 'document:generate
-            {file} {--f|force} {--o|overwrite}';
+    protected $signature = 'document:generate';
+//            {file} {--f|force} {--o|overwrite}';
 
     /**
      * The console command description.
@@ -38,18 +39,24 @@ class DocumentGeneratorCommand extends GeneratorCommand
      */
     public function handle()
     {
-        $manager = app(Manager::class);
-        $manager->getMappedStack()->each(function($table,$model){
-            var_dump(1);
-            $this->info($table.':'.$model);
-        });
+        $parser = app(ModelParser::class);
 
-        $file = $this->argument('file');
-        $this->info($file);
-        $force = $this->option('force');
-        $overwrite = $this->option('overwrite');
-        $this->info($force);
-        $this->info($overwrite);
+        collect($parser->modelStack)->each(function ($model) use ($parser) {
+            $this->files->put($parser->getOutputPath($model), $parser->getMarkdown($model));
+        });
+        $this->info('success');
+//        $manager = app(Manager::class);
+//        $manager->getMappedStack()->each(function ($table, $model) {
+//            var_dump(1);
+//            $this->info($table . ':' . $model);
+//        });
+//
+//        $file = $this->argument('file');
+//        $this->info($file);
+//        $force = $this->option('force');
+//        $overwrite = $this->option('overwrite');
+//        $this->info($force);
+//        $this->info($overwrite);
         return;
     }
 }

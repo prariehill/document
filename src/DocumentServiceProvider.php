@@ -17,14 +17,14 @@ class DocumentServiceProvider extends ServiceProvider
         // merge default config
         $this->mergeConfigFrom(
             __DIR__ . '/config/document.php',
-            'temporariesDoc'
+            'document'
         );
     }
 
     public function boot()
     {
         $this->publishes([
-            __DIR__ . '/config/document.php' => config_path('temporariesDoc.php')
+            __DIR__ . '/config/document.php' => config_path('document.php')
         ],'config');
 
         $this->commands(
