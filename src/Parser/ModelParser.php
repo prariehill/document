@@ -2,76 +2,66 @@
 
 namespace Temporaries\Document\Parser;
 
-use Doctrine\DBAL\Configuration;
-use Doctrine\DBAL\DriverManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\DB;
 
 class ModelParser
 {
-    private $mappedStack = [];
-
-    private $modelStack = [];
-
-    private $tableStack = [];
-
-    private $relatedStack = [];
-
-    private $nicknameStack = [];
-
-    private $namespace;
-
     private $schema;
 
     private $filesystem;
 
-    private $path;
+
+    private $namespace;
+
+    private $inputPath;
+
+    private $outputPath = [];
+
+    public $stack = [];
+
+    public $aliasStack = [];
+
+    public $relatedStack = [];
+
+    public $mappedStack = [];
+
+    private $defaultAliasStack = [];
+
+    private $defaultRelatedStack = [];
+
+    private $defaultColumnCommentStack = [
+        'created_at' => '创建时间',
+        'updated_at' => '更新时间',
+        'deleted_at' => '删除时间'
+    ];
+
 
     public function __construct()
     {
-        $this->path = config('document.input.path');
-        $this->namespace = config('document.input.namespace');
+        $this->schema = DB::getDoctrineSchemaManager();
         $this->filesystem = app(Filesystem::class);
-        $this->setConnectionConfig();
-        $this->buildMap();
+
+        $this->inputPath = config('document.input.path');
+        $this->namespace = config('document.input.namespace');
+        $this->outputPath = config('document.output.path');
+        $this->defaultColumnCommentStack = config('document.default.column');
+        $this->defaultAliasStack = config('document.default.model');
+        $this->build();
     }
 
-    public function getOutputPath($model)
+    public function getModelOutputPath($model)
     {
-        if (!is_dir($directory = config('document.output.model'))) {
+        if (!is_dir($directory = $this->outputPath['model'])) {
             $this->filesystem->makeDirectory($directory);
         }
         return $directory . DIRECTORY_SEPARATOR . $model . ".md";
     }
 
-    public function getMappedStack()
-    {
-        return $this->mappedStack;
-    }
-
-    public function getModelStack()
-    {
-        return $this->modelStack;
-    }
-
-    public function getTableStack()
-    {
-        return $this->tableStack;
-    }
-
-    public function getRelatedStack()
-    {
-        return $this->relatedStack;
-    }
-
-    public function getNicknameStack()
-    {
-        return $this->nicknameStack;
-    }
-
     public function getMarkdown($model)
     {
-        $chineseName = $this->nicknameStack[$model] ?? '';
+        $chineseName = $this->getModelAlias($model);
         $content = <<<INFO
 # $model $chineseName
 
@@ -79,15 +69,17 @@ Parameter                       | Type            | Length  | Comment
 :------------------------------ | :-------------- | :------ | :----------
 
 INFO;
+
         $columns = $this->schema->listTableColumns($this->mappedStack[$model]);
+
         foreach ($columns as $column) {
             $type = $column->getType() == 'Boolean' ? 'Integer' : $column->getType();
-
+            $comment = $column->getComment() ?? ($this->defaultColumnComments[$column->getName()] ?? '');
             $content .=
                 $this->buildParameter($column->getName()) .
                 $this->buildType($type) .
                 $this->buildLength($column->getLength()) .
-                $this->buildComment($column->getComment());
+                $this->buildComment($comment);
         }
 
         if (isset($this->relatedStack[$model])) {
@@ -96,34 +88,32 @@ INFO;
                     $this->buildParameter("[$model]($model.md)") .
                     $this->buildType('Object') .
                     $this->buildLength('') .
-                    $this->buildComment($this->nicknameStack[$model] ?? '');
+                    $this->buildComment($this->nicknameStack[$model] ?? ($this->defaultModelComments[$model] ?? ''));
             }
         }
         return $content;
     }
 
 
-    protected function buildMap()
+    protected function build()
     {
-        $files = $this->filesystem->files($this->path);
+        $files = $this->filesystem->files($this->inputPath);
 
-        collect($files)->each(function ($file) {
+        foreach ($files as $file) {
             if ($model = $this->matchModel($file->getFilename())) {
-                $this->modelStack[] = $model;
-                if ($nickname = $this->matchNickname($file->getContents()))
-                    $this->nicknameStack[$model] = $nickname;
-                if ($related = $this->matchRelated($file->getContents()))
-                    $this->relatedStack[$model] = $related;
-            }
-        });
 
-        collect($this->modelStack)->each(function ($model) {
-            $table = $this->getTable($model);
-            if ($table) {
-                $this->tableStack[] = $table;
-                $this->mappedStack[$model] = $table;
+                $this->stack[] = $model;
+
+                $this->aliasStack[$model] = $this->matchAlias($file->getContents()) ?? $this->defaultAliasStack[$model] ?? '';
+
+                $this->relatedStack[$model] = $this->matchRelated($file->getContents()) ?? $this->processRelated($this->defaultRelatedStack[$model] ?? '');
             }
-        });
+        }
+
+        foreach ($this->stack as $model) {
+            $table = $this->getTable($model);
+            if ($table) $this->mappedStack[$model] = $table;
+        }
     }
 
     protected function getTable($model)
@@ -138,7 +128,7 @@ INFO;
         return preg_match('/(.*)\.php/', $content, $matches) ? $matches[1] : '';
     }
 
-    protected function matchNickname($content)
+    protected function matchAlias($content)
     {
         return preg_match("/\/\*\*[^\f\t\v]+@TDocName=(.+)[^\f\t\v]+\*\//", $content, $matches) ? $matches[1] : '';
     }
@@ -146,17 +136,15 @@ INFO;
     protected function matchRelated($content)
     {
         return preg_match("/\/\*\*[^\f\t\v]+@TDocRelated=(.+)[^\f\t\v]+\*\//", $content, $matches) ?
-            collect(explode(',', $matches[1]))->map(function ($related) {
-                return trim($related);
-            })->filter()->toArray()
+            $this->processRelated($matches[1])
             : [];
     }
 
-    private function setConnectionConfig()
+    protected function processRelated($related)
     {
-        $configuration = new Configuration();
-        $connectionParams = config('document.connections');
-        $this->schema = DriverManager::getConnection($connectionParams, $configuration)->getSchemaManager();
+        return collect(explode(',', $related))->map(function ($model) {
+            return trim($model);
+        })->filter()->sort()->toArray();
     }
 
     protected function buildParameter($value)
@@ -177,5 +165,10 @@ INFO;
     protected function buildComment($value)
     {
         return ' ' . $value . "\r\n";
+    }
+
+    private function getModelAlias($model)
+    {
+        return $this->modelAliasStack[$model] ?? ($this->defaultModelAlias[$model] ?? '');
     }
 }

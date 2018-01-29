@@ -3,7 +3,7 @@ return [
     /**
      * --------------------------------
      *
-     * 输入 =￣ω￣=
+     * 输入
      *
      * --------------------------------
      */
@@ -15,7 +15,7 @@ return [
     /**
      * --------------------------------
      *
-     * 输出 =￣ω￣=
+     * 输出
      *
      * --------------------------------
      */
@@ -25,14 +25,19 @@ return [
 
     /**
      * --------------------------------
-     * 数据库 =￣ω￣=
+     *
+     * 默认备注
+     *
      * --------------------------------
      */
-    'connections' => [
-        'driver' => 'pdo_mysql',
-        'dbname' => env('DB_DATABASE', config('database.connections.mysql.database')),
-        'user' => env('DB_USERNAME', config('database.connections.mysql.username')),
-        'password' => env('DB_PASSWORD', config('database.connections.mysql.password')),
-        'host' => env('DB_HOST', config('database.connections.mysql.host')),
+    'default' => [
+        'model' => [
+            'Member' => '用户'
+        ],
+        'column' => [
+            'created_at' => '创建时间',
+            'updated_at' => '更新时间',
+            'deleted_at' => '删除时间',
+        ]
     ],
 ];

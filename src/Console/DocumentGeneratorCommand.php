@@ -41,7 +41,7 @@ class DocumentGeneratorCommand extends GeneratorCommand
     {
         $parser = app(ModelParser::class);
 
-        collect($parser->modelStack)->each(function ($model) use ($parser) {
+        collect($parser->getModelStack())->each(function ($model) use ($parser) {
             $this->files->put($parser->getOutputPath($model), $parser->getMarkdown($model));
         });
         $this->info('success');
