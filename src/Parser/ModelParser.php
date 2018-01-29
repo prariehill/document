@@ -9,15 +9,15 @@ use Illuminate\Filesystem\Filesystem;
 
 class ModelParser
 {
-    public $mappedStack = [];
+    private $mappedStack = [];
 
-    public $modelStack = [];
+    private $modelStack = [];
 
-    public $tableStack = [];
+    private $tableStack = [];
 
-    public $relatedStack = [];
+    private $relatedStack = [];
 
-    public $nicknameStack = [];
+    private $nicknameStack = [];
 
     private $namespace;
 
@@ -42,6 +42,31 @@ class ModelParser
             $this->filesystem->makeDirectory($directory);
         }
         return $directory . DIRECTORY_SEPARATOR . $model . ".md";
+    }
+
+    public function getMappedStack()
+    {
+        return $this->mappedStack;
+    }
+
+    public function getModelStack()
+    {
+        return $this->modelStack;
+    }
+
+    public function getTableStack()
+    {
+        return $this->tableStack;
+    }
+
+    public function getRelatedStack()
+    {
+        return $this->relatedStack;
+    }
+
+    public function getNicknameStack()
+    {
+        return $this->nicknameStack;
     }
 
     public function getMarkdown($model)
@@ -115,12 +140,12 @@ INFO;
 
     protected function matchNickname($content)
     {
-        return preg_match("/@DocName=(.+)" . PHP_EOL . "/", $content, $matches) ? $matches[1] : '';
+        return preg_match("/\/\*\*[^\f\t\v]+@TDocName=(.+)[^\f\t\v]+\*\//", $content, $matches) ? $matches[1] : '';
     }
 
     protected function matchRelated($content)
     {
-        return preg_match("/@DocRelated=(.+)" . PHP_EOL . "/", $content, $matches) ?
+        return preg_match("/\/\*\*[^\f\t\v]+@TDocRelated=(.+)[^\f\t\v]+\*\//", $content, $matches) ?
             collect(explode(',', $matches[1]))->map(function ($related) {
                 return trim($related);
             })->filter()->toArray()
