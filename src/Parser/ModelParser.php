@@ -12,7 +12,6 @@ class ModelParser
 
     private $filesystem;
 
-
     private $namespace;
 
     private $inputPath;
@@ -36,7 +35,6 @@ class ModelParser
         'updated_at' => '更新时间',
         'deleted_at' => '删除时间'
     ];
-
 
     public function __construct()
     {
@@ -88,12 +86,11 @@ INFO;
                     $this->buildParameter("[$model]($model.md)") .
                     $this->buildType('Object') .
                     $this->buildLength('') .
-                    $this->buildComment($this->nicknameStack[$model] ?? ($this->defaultModelComments[$model] ?? ''));
+                    $this->buildComment($this->aliasStack[$model] ?? ($this->defaultModelComments[$model] ?? ''));
             }
         }
         return $content;
     }
-
 
     protected function build()
     {
