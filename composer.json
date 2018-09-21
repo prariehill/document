@@ -21,10 +21,14 @@
     "laravel/framework": "5.5.*",
     "doctrine/dbal": "^2.6"
   },
+  "autoload": {
+    "psr-4": {
+      "Temporaries\\Document\\": "src/"
+    }
+  },
   "autoload-dev": {
     "psr-4": {
       "Temporaries\\Document\\Tests\\": "tests/",
-      "Temporaries\\Document\\": "src/"
     }
   },
   "extra": {
