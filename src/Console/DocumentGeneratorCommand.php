@@ -3,6 +3,8 @@
 namespace Temporaries\Document\Console;
 
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Filesystem\Filesystem;
+use Temporaries\Document\Generator\ModelGenerator;
 use Temporaries\Document\Manager;
 use Temporaries\Document\Parser\ModelParser;
 
@@ -23,6 +25,14 @@ class DocumentGeneratorCommand extends GeneratorCommand
      */
     protected $description = 'generate document';
 
+    protected $modelGenerator;
+
+    public function __construct(Filesystem $files,ModelGenerator $modelGenerator)
+    {
+        parent::__construct($files);
+        $this->modelGenerator = $modelGenerator;
+    }
+
     /**
      * Get the stub file for the generator.
      *
@@ -39,11 +49,7 @@ class DocumentGeneratorCommand extends GeneratorCommand
      */
     public function handle()
     {
-        $parser = app(ModelParser::class);
-
-        collect($parser->getModelStack())->each(function ($model) use ($parser) {
-            $this->files->put($parser->getOutputPath($model), $parser->getMarkdown($model));
-        });
+        $this->modelGenerator->generate();
         $this->info('success');
 //        $manager = app(Manager::class);
 //        $manager->getMappedStack()->each(function ($table, $model) {

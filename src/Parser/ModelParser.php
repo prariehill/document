@@ -22,9 +22,9 @@ class ModelParser
 
     public $aliasStack = [];
 
-    public $relatedStack = [];
-
     public $mappedStack = [];
+
+    public $relatedStack = [];
 
     private $defaultAliasStack = [];
 
@@ -36,25 +36,27 @@ class ModelParser
         'deleted_at' => '删除时间'
     ];
 
-    public function __construct()
+    public function __construct(Filesystem $filesystem)
     {
         $this->schema = DB::getDoctrineSchemaManager();
-        $this->filesystem = app(Filesystem::class);
+        $this->filesystem = $filesystem;
 
         $this->inputPath = config('document.input.path');
         $this->namespace = config('document.input.namespace');
-        $this->outputPath = config('document.output.path');
+        $this->outputPath = config('document.output');
         $this->defaultColumnCommentStack = config('document.default.column');
         $this->defaultAliasStack = config('document.default.model');
-        $this->build();
+
+        if (!is_dir($directory = $this->outputPath['model'])) {
+            $this->filesystem->makeDirectory($directory);
+        }
+
+        $this->buildStack();
     }
 
     public function getModelOutputPath($model)
     {
-        if (!is_dir($directory = $this->outputPath['model'])) {
-            $this->filesystem->makeDirectory($directory);
-        }
-        return $directory . DIRECTORY_SEPARATOR . $model . ".md";
+        return $this->outputPath['model'] . DIRECTORY_SEPARATOR . $model . ".md";
     }
 
     public function getMarkdown($model)
@@ -72,7 +74,7 @@ INFO;
 
         foreach ($columns as $column) {
             $type = $column->getType() == 'Boolean' ? 'Integer' : $column->getType();
-            $comment = $column->getComment() ?? ($this->defaultColumnComments[$column->getName()] ?? '');
+            $comment = $column->getComment() ?? ($this->defaultColumnCommentStack[$column->getName()] ?? '');
             $content .=
                 $this->buildParameter($column->getName()) .
                 $this->buildType($type) .
@@ -86,13 +88,13 @@ INFO;
                     $this->buildParameter("[$model]($model.md)") .
                     $this->buildType('Object') .
                     $this->buildLength('') .
-                    $this->buildComment($this->aliasStack[$model] ?? ($this->defaultModelComments[$model] ?? ''));
+                    $this->buildComment($this->aliasStack[$model] ?? ($this->defaultColumnCommentStack[$model] ?? ''));
             }
         }
         return $content;
     }
 
-    protected function build()
+    protected function buildStack()
     {
         $files = $this->filesystem->files($this->inputPath);
 
@@ -120,6 +122,21 @@ INFO;
         return $reflection->isSubclassOf(Model::class) ? app($class)->getTable() : '';
     }
 
+    protected function processRelated($related)
+    {
+        return collect(explode(',', $related))->map(function ($model) {
+            return trim($model);
+        })->filter()->sort()->toArray();
+    }
+
+    private function getModelAlias($model)
+    {
+        return $this->modelAliasStack[$model] ?? ($this->defaultModelAlias[$model] ?? '');
+    }
+
+    /**
+     * Match
+     */
     protected function matchModel($content)
     {
         return preg_match('/(.*)\.php/', $content, $matches) ? $matches[1] : '';
@@ -137,13 +154,9 @@ INFO;
             : [];
     }
 
-    protected function processRelated($related)
-    {
-        return collect(explode(',', $related))->map(function ($model) {
-            return trim($model);
-        })->filter()->sort()->toArray();
-    }
-
+    /**
+     * Build
+     */
     protected function buildParameter($value)
     {
         return str_pad($value, 32, " ") . "|";
@@ -162,10 +175,5 @@ INFO;
     protected function buildComment($value)
     {
         return ' ' . $value . "\r\n";
-    }
-
-    private function getModelAlias($model)
-    {
-        return $this->modelAliasStack[$model] ?? ($this->defaultModelAlias[$model] ?? '');
     }
 }

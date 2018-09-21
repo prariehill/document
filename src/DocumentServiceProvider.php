@@ -19,6 +19,8 @@ class DocumentServiceProvider extends ServiceProvider
             __DIR__ . '/config/document.php',
             'document'
         );
+
+        
     }
 
     public function boot()
