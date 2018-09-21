@@ -27,13 +27,13 @@
       "Temporaries\\Document\\": "src/"
     }
   },
-//  "extra": {
-//    "laravel": {
-//      "providers": [
-//        "Temporaries\\Area\\AreaServiceProvider"
-//      ]
-//    }
-//  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Temporaries\\Document\\DocumentServiceProvider"
+      ]
+    }
+  },
   "config": {
     "sort-packages": true
   }
